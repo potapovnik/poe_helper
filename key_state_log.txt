@@ -1,0 +1,208 @@
+
+========================================================================
+Logger started: 2026-11-04 16:21:00.617962
+Press ESC in any application to stop logging.
+[2026-11-04 16:21:06.577455] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:06.671612] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:10.387623] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:10.443359] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:10.500762] alt | up | Windows Alt: L=True, R=False
+[2026-11-04 16:21:10.577452] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:20.149397] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:20.262305] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.748315] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.752082] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.753626] c | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.754016] c | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.754488] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.846322] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:22.436782] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:22.437182] c | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:22.437533] c | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:22.437836] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.120528] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.120891] c | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.121184] c | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.121448] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.804352] left shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:26.837097] left shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.720318] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.724547] left shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.756026] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.756571] C | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.756930] C | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.757219] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.801502] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:29.439732] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:29.440174] C | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:29.440555] C | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:29.440851] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.123083] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.123486] C | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.123790] C | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.124175] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.806472] left shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:31.824424] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:31.970446] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:33.771346] y | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:33.820306] y | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:34.477373] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:34.480734] left shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:34.509298] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:35.546389] left shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:36.587304] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:37.062408] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:37.146266] alt | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:37.239337] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:38.542335] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:38.640324] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:40.391310] y | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:40.481338] y | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.058300] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.061469] left shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.130643] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.282060] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.282586] C | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.282806] C | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.283012] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.464430] left shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:44.195316] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:44.318562] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:44.393390] alt | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:44.465493] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:46.477340] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:46.531363] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:48.325273] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:48.378322] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.718306] y | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.834317] y | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.894281] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.898058] left shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.963496] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.115925] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.116448] C | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.116793] C | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.117167] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.298044] left shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:52.398323] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:52.493471] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:21:52.572303] alt | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:52.677317] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:53.745332] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:53.810252] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:21:55.526457] y | down | Windows Alt: L=False, R=False
+[2026-11-04 16:21:55.641635] y | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.434410] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.439674] left shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.515599] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.657927] left ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.658830] C | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.659301] C | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.659665] left ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.840837] left shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:02.699569] f6 | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:02.816358] f6 | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.310382] f7 | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.435500] f7 | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.962404] f10 | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:04.108338] f10 | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:05.101548] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:05.161450] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:05.219454] alt | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:05.313333] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:06.141440] enter | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:06.230336] enter | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:09.387325] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:09.899848] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:09.930644] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:09.961713] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:09.992338] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.022843] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.053907] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.099552] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.130532] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.161932] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.192803] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.223777] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.255345] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.286506] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.317861] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.364128] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.394683] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.425967] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.456450] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.487442] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.518465] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.549446] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.580623] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.627051] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.657617] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.688630] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.719364] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.750782] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.781454] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.812897] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.858224] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.888982] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.920322] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.951146] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:10.982433] shift | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:11.002242] shift | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:13.383279] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:13.890689] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:13.921274] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:13.952179] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:13.982702] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.029371] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.059922] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.090673] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.121531] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.152372] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.183148] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.214749] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.260051] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.290430] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.300309] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.503237] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.653226] c | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.803278] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:14.839226] c | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:16.724350] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:16.833352] v | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:16.958346] v | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:16.974429] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:20.372318] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:20.495464] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:20.557314] alt | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:20.646404] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:21.960281] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:22.255225] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:23.814315] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:23.909394] c | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:24.076421] c | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:24.081401] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:26.296288] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:26.635297] v | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:26.792423] v | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:26.824318] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:28.525453] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:28.598210] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:28.641366] alt | up | Windows Alt: L=True, R=False
+[2026-11-04 16:22:28.753073] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:29.693358] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:29.786317] c | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:29.928319] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:29.941384] c | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:30.204253] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:30.271259] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:22:30.320282] alt | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:30.401297] tab | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:31.136307] ctrl | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:31.225504] v | down | Windows Alt: L=False, R=False
+[2026-11-04 16:22:31.351305] v | up | Windows Alt: L=False, R=False
+[2026-11-04 16:22:31.389257] ctrl | up | Windows Alt: L=False, R=False
+[2026-11-04 16:28:40.942986] alt | down | Windows Alt: L=True, R=False
+[2026-11-04 16:28:41.395949] tab | down | Windows Alt: L=True, R=False
+[2026-11-04 16:28:41.488145] alt | up | Windows Alt: L=True, R=False
+[2026-11-04 16:28:41.546263] tab | up | Windows Alt: L=False, R=False
+Logger stopped: 2026-11-04 16:28:46.893126

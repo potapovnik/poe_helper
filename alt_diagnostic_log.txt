@@ -1,0 +1,89 @@
+PoE 2 extended Alt diagnostic
+Started: 2026-11-04 16:21:02.982079
+Each line includes a sampled Windows Alt state.
+
+[2026-11-04 16:21:02.982402] DIAGNOSTIC START | Windows Alt: L=False, R=False
+[2026-11-04 16:21:02.982537] Initial state | Windows Alt: L=False, R=False
+[2026-11-04 16:21:06.581480] STAGE 0 START — idle for 5 seconds | Windows Alt: L=False, R=False
+[2026-11-04 16:21:07.582185] Idle second 1/5 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:08.582921] Idle second 2/5 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:09.583296] Idle second 3/5 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:10.583971] Idle second 4/5 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:11.584465] Idle second 5/5 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:11.585003] STAGE 0 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.750966] STAGE 1 START — Ctrl+C without Shift | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.751515] Ctrl+C repeat 1/3 — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:21.935347] Ctrl+C repeat 1/3 — AFTER Ctrl+C; clipboard length=2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:22.436280] Ctrl+C repeat 2/3 — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:22.618751] Ctrl+C repeat 2/3 — AFTER Ctrl+C; clipboard length=2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.119974] Ctrl+C repeat 3/3 — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.302594] Ctrl+C repeat 3/3 — AFTER Ctrl+C; clipboard length=2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.803685] STAGE 1 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:23.804062] STAGE 2 START — Shift held, no other automation | Windows Alt: L=False, R=False
+[2026-11-04 16:21:24.835184] Shift-only second 1/3 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:25.836138] Shift-only second 2/3 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:26.836647] Shift-only second 3/3 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:26.867424] Shift released — stage 2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:26.867805] STAGE 2 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.723973] STAGE 3 START — Shift held during Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.755287] Shift+Ctrl+C repeat 1/3 — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:28.938290] Shift+Ctrl+C repeat 1/3 — AFTER Ctrl+C; clipboard length=2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:29.439130] Shift+Ctrl+C repeat 2/3 — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:29.621997] Shift+Ctrl+C repeat 2/3 — AFTER Ctrl+C; clipboard length=2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.122576] Shift+Ctrl+C repeat 3/3 — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.305410] Shift+Ctrl+C repeat 3/3 — AFTER Ctrl+C; clipboard length=2 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.837042] Shift released — stage 3 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:30.837274] STAGE 3 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:34.480169] STAGE 4 START — Shift+one click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:34.511236] Immediately before Shift+click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:34.545446] Immediately after Shift+click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:35.576984] Shift released — stage 4 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:35.577333] STAGE 4 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.061008] STAGE 5 START — Shift+click followed by Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.091850] Immediately before click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.129445] Immediately after click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.281097] After Shift+click — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.463857] After Shift+click — AFTER Ctrl+C; clipboard length=668 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.494992] Shift released — stage 5 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:41.495262] STAGE 5 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:46.480395] STAGE 6 START — small smooth mouse movement, no keys/clicks | Windows Alt: L=False, R=False
+[2026-11-04 16:21:46.763257] Mouse moved right | Windows Alt: L=False, R=False
+[2026-11-04 16:21:47.046145] Mouse returned to original position | Windows Alt: L=False, R=False
+[2026-11-04 16:21:47.046378] STAGE 6 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.896745] STAGE 7 START — click+copy cycle in a separate thread | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.897517] Worker thread started | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.928916] Worker: before click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:49.964351] Worker: after click | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.114984] Worker: Ctrl+C after click — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.297685] Worker: Ctrl+C after click — AFTER Ctrl+C; clipboard length=668 | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.328796] Worker: Shift released | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.329383] Worker thread finished | Windows Alt: L=False, R=False
+[2026-11-04 16:21:50.329899] STAGE 7 END | Windows Alt: L=False, R=False
+[2026-11-04 16:21:53.750768] STAGE 8 START — keyboard hook + F6/F7/F10 hotkey listeners + worker | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.438402] STAGE 7 START — click+copy cycle in a separate thread | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.438982] Worker thread started | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.439434] keyboard hook: left shift down, scan_code=-160 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.470460] Worker: before click | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.505737] Worker: after click | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.656667] Worker: Ctrl+C after click — BEFORE Ctrl+C | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.657666] keyboard hook: left ctrl down, scan_code=-162 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.659614] keyboard hook: left ctrl up, scan_code=-162 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.840356] Worker: Ctrl+C after click — AFTER Ctrl+C; clipboard length=668 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.840763] keyboard hook: left shift up, scan_code=-160 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.871192] Worker: Shift released | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.871598] Worker thread finished | Windows Alt: L=False, R=False
+[2026-11-04 16:22:01.872836] STAGE 7 END | Windows Alt: L=False, R=False
+[2026-11-04 16:22:02.699462] keyboard.add_hotkey callback fired: F6 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:02.699740] keyboard hook: f6 down, scan_code=64 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:02.816311] keyboard hook: f6 up, scan_code=64 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.310331] keyboard.add_hotkey callback fired: F7 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.310554] keyboard hook: f7 down, scan_code=65 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.435368] keyboard hook: f7 up, scan_code=65 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.962330] keyboard.add_hotkey callback fired: F10 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:03.962640] keyboard hook: f10 down, scan_code=68 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:04.108285] keyboard hook: f10 up, scan_code=68 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:05.101342] keyboard hook: alt down, scan_code=56 | Windows Alt: L=False, R=False
+[2026-11-04 16:22:05.219354] keyboard hook: alt up, scan_code=56 | Windows Alt: L=True, R=False
+[2026-11-04 16:22:06.146493] keyboard hooks and hotkeys removed | Windows Alt: L=False, R=False
+[2026-11-04 16:22:06.146756] STAGE 8 END | Windows Alt: L=False, R=False
+[2026-11-04 16:22:06.146894] DIAGNOSTIC FINISHED | Windows Alt: L=False, R=False
