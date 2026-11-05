@@ -4,32 +4,35 @@ PoE 2 grid currency spammer
 1. Hover the first item and select the currency manually.
 2. Put the cursor over the FIRST item (top-left of the grid).
 3. Set COLUMNS and ROWS below.
-4. Press F6 to start; F7 stops; F10 exits.
+4. Press F6 to start; F7 stops; F10 performs an emergency stop and exits.
 
 Shift is held continuously during the whole run and released only on exit/stop.
 """
 
 import time
 import threading
+import os
+import ctypes
 
 import keyboard
 import pyautogui
+import pydirectinput
 import pyperclip
 
 # ---------- USER SETTINGS ----------
 
 TARGET_FILE = "target.txt"
 
-COLUMNS = 2             # N: number of columns
-ROWS = 2                # M: number of rows
+COLUMNS = 4             # N: number of columns
+ROWS = 1                # M: number of rows
 
-MOVE_RIGHT_PIXELS = 70  # Distance between item centers horizontally
-MOVE_DOWN_PIXELS = 70   # Distance between item centers vertically
+MOVE_RIGHT_PIXELS = 65  # Distance between item centers horizontally
+MOVE_DOWN_PIXELS = 65   # Distance between item centers vertically
 MOVE_DURATION = 0.25    # Smooth mouse movement duration, in seconds
 
-TARGET_MODE = "ANY"     # "ALL" = every target in target.txt; "ANY" = at least one
+TARGET_MODE = "ALL"     # "ALL" = every target in target.txt; "ANY" = at least one
 
-MAX_ATTEMPTS = 50     # Safety cap for EACH item
+MAX_ATTEMPTS = 1500     # Safety cap for EACH item
 CLICK_DELAY = 0.15      # Delay after each currency use
 COPY_DELAY = 0.15       # Original working Ctrl+C delay
 
@@ -43,6 +46,59 @@ busy = False
 exit_requested = False
 state_lock = threading.Lock()
 
+
+
+# ---------- TARGET LOG ----------
+# One persistent file; each unique target set is written only once.
+LOG_DIR = "logs"
+TARGET_LOG_FILE = "target_values.txt"
+LOG_SEPARATOR = "------------------------------------------------------------"
+log_lock = threading.Lock()
+
+
+def save_targets_to_log(targets):
+    """Append target values only, skipping sets already present (order/case-insensitive)."""
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), LOG_DIR)
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, TARGET_LOG_FILE)
+
+    current = [value.strip() for value in targets if value.strip()]
+    if not current:
+        return
+
+    new_key = tuple(sorted(set(value.casefold() for value in current)))
+
+    with log_lock:
+        existing_keys = set()
+        if os.path.exists(log_path):
+            with open(log_path, "r", encoding="utf-8-sig") as log_file:
+                block = []
+                for raw_line in log_file:
+                    line = raw_line.strip()
+                    if line == LOG_SEPARATOR:
+                        values = [item.casefold() for item in block if item]
+                        if values:
+                            existing_keys.add(tuple(sorted(set(values))))
+                        block = []
+                    elif line:
+                        block.append(line)
+                values = [item.casefold() for item in block if item]
+                if values:
+                    existing_keys.add(tuple(sorted(set(values))))
+
+        if new_key in existing_keys:
+            print("Target set already exists in log; skipping log entry.")
+            return
+
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+                log_file.write("\\n")
+            log_file.write(LOG_SEPARATOR + "\\n")
+            for value in current:
+                log_file.write(value + "\\n")
+            log_file.write(LOG_SEPARATOR + "\\n")
+        print(f"New target set saved to {log_path}.")
+# -------------------------------
 
 def load_targets():
     with open(TARGET_FILE, "r", encoding="utf-8-sig") as f:
@@ -179,6 +235,8 @@ def start():
             print("Targets is empty. Add values to target.txt.")
             return
 
+        save_targets_to_log(targets)
+
         if COLUMNS < 1 or ROWS < 1:
             print("COLUMNS and ROWS must both be at least 1.")
             return
@@ -222,7 +280,7 @@ def start():
                 # Move to the next item in this row.
                 if column < COLUMNS:
                     move_smooth(MOVE_RIGHT_PIXELS, 0)
-                    time.sleep(0.70)
+                    time.sleep(0.20)
 
             # After the last column, return to the first column and move down.
             if running and row < ROWS:
@@ -230,7 +288,7 @@ def start():
                     move_smooth(-MOVE_RIGHT_PIXELS * (COLUMNS - 1), 0)
 
                 move_smooth(0, MOVE_DOWN_PIXELS)
-                time.sleep(0.70)
+                time.sleep(0.20)
 
         print("\nGrid sequence finished.")
 
@@ -257,11 +315,23 @@ def request_start():
     threading.Thread(target=start, daemon=True).start()
 
 
+
 def request_exit():
+    """F10: request an emergency stop and exit the application."""
     global exit_requested, running
     running = False
     exit_requested = True
-    print("Exit requested.")
+    print("\nEMERGENCY STOP: F10 pressed. Releasing keys and exiting...")
+    # If no worker is active, release modifiers immediately.
+    if not busy:
+        for key in ("shift", "ctrl", "alt"):
+            try:
+                pydirectinput.keyUp(key)
+            except Exception:
+                try:
+                    pyautogui.keyUp(key)
+                except Exception:
+                    pass
 
 
 def main():
@@ -269,23 +339,38 @@ def main():
     print(f'Target text: "{load_targets()}"')
     print(f"Grid: {COLUMNS} columns x {ROWS} rows")
     print(f"Target mode: {TARGET_MODE}")
-    print("1) Select the currency manually.")
-    print("2) Put the cursor over the TOP-LEFT item.")
-    print("3) F6 = start, F7 = stop, F10 = exit.")
-    print("Shift stays held for the whole run.")
+    print("F6 = start, F7 = stop, F10 = emergency stop and exit.")
+    print("F10 is monitored directly through Windows API.")
 
+    # Keep existing F6/F7 behavior; F10 is polled separately because
+    # the keyboard hook was unreliable in the previous version.
     keyboard.add_hotkey("f6", request_start)
     keyboard.add_hotkey("f7", stop)
-    keyboard.add_hotkey("f10", request_exit)
+
+    user32 = ctypes.windll.user32
+    f10_vk = 0x79
+    f10_was_down = False
 
     try:
         while not exit_requested:
-            time.sleep(0.1)
+            f10_is_down = bool(user32.GetAsyncKeyState(f10_vk) & 0x8000)
+            if f10_is_down and not f10_was_down:
+                request_exit()
+            f10_was_down = f10_is_down
+            time.sleep(0.02)
     except KeyboardInterrupt:
         pass
     finally:
         stop()
         keyboard.unhook_all()
+        for key in ("shift", "ctrl", "alt"):
+            try:
+                pydirectinput.keyUp(key)
+            except Exception:
+                try:
+                    pyautogui.keyUp(key)
+                except Exception:
+                    pass
         print("Exited.")
 
 

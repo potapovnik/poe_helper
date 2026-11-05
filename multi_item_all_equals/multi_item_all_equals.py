@@ -3,7 +3,7 @@ PoE 2 grid currency spammer
 
 Keyboard injection:
 - pydirectinput is used for Shift, Ctrl+C, and Alt release.
-- keyboard remains responsible for listening to F6/F7/F10 hotkeys.
+- keyboard handles F6/F7; Windows API polling handles emergency F10.
 - PyAutoGUI remains responsible for mouse clicks and smooth grid movement.
 
 target.txt: one desired property per line.
@@ -19,6 +19,8 @@ Item logic:
 
 import time
 import threading
+import os
+import ctypes
 
 import keyboard
 import pyautogui
@@ -30,15 +32,15 @@ import pyperclip
 TARGET_FILE = "target.txt"
 
 COLUMNS = 12
-ROWS = 8
+ROWS = 5
 
-MOVE_RIGHT_PIXELS = 70
-MOVE_DOWN_PIXELS = 70
+MOVE_RIGHT_PIXELS = 65
+MOVE_DOWN_PIXELS = 65
 MOVE_DURATION = 0.25
 
 REQUIRED_TARGETS = 2
 
-MAX_ATTEMPTS = 80
+MAX_ATTEMPTS = 60
 CLICK_DELAY = 0.15
 COPY_DELAY = 0.15
 # -----------------------------
@@ -55,6 +57,59 @@ busy = False
 exit_requested = False
 state_lock = threading.Lock()
 
+
+
+# ---------- TARGET LOG ----------
+# One persistent file; each unique target set is written only once.
+LOG_DIR = "logs"
+TARGET_LOG_FILE = "target_values.txt"
+LOG_SEPARATOR = "------------------------------------------------------------"
+log_lock = threading.Lock()
+
+
+def save_targets_to_log(targets):
+    """Append target values only, skipping sets already present (order/case-insensitive)."""
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), LOG_DIR)
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, TARGET_LOG_FILE)
+
+    current = [value.strip() for value in targets if value.strip()]
+    if not current:
+        return
+
+    new_key = tuple(sorted(set(value.casefold() for value in current)))
+
+    with log_lock:
+        existing_keys = set()
+        if os.path.exists(log_path):
+            with open(log_path, "r", encoding="utf-8-sig") as log_file:
+                block = []
+                for raw_line in log_file:
+                    line = raw_line.strip()
+                    if line == LOG_SEPARATOR:
+                        values = [item.casefold() for item in block if item]
+                        if values:
+                            existing_keys.add(tuple(sorted(set(values))))
+                        block = []
+                    elif line:
+                        block.append(line)
+                values = [item.casefold() for item in block if item]
+                if values:
+                    existing_keys.add(tuple(sorted(set(values))))
+
+        if new_key in existing_keys:
+            print("Target set already exists in log; skipping log entry.")
+            return
+
+        with open(log_path, "a", encoding="utf-8") as log_file:
+            if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
+                log_file.write("\\n")
+            log_file.write(LOG_SEPARATOR + "\\n")
+            for value in current:
+                log_file.write(value + "\\n")
+            log_file.write(LOG_SEPARATOR + "\\n")
+        print(f"New target set saved to {log_path}.")
+# -------------------------------
 
 def load_targets():
     with open(TARGET_FILE, "r", encoding="utf-8-sig") as f:
@@ -192,6 +247,8 @@ def start():
             print("target.txt is empty. Add one property per line.")
             return
 
+        save_targets_to_log(targets)
+
         if COLUMNS < 1 or ROWS < 1:
             print("COLUMNS and ROWS must both be at least 1.")
             return
@@ -238,13 +295,13 @@ def start():
 
                 if column < COLUMNS:
                     move_smooth(MOVE_RIGHT_PIXELS, 0)
-                    time.sleep(0.70)
+                    time.sleep(0.20)
 
             if running and row < ROWS:
                 if COLUMNS > 1:
                     move_smooth(-MOVE_RIGHT_PIXELS * (COLUMNS - 1), 0)
                 move_smooth(0, MOVE_DOWN_PIXELS)
-                time.sleep(0.70)
+                time.sleep(0.20)
 
         print("\nGrid sequence finished.")
 
@@ -276,36 +333,62 @@ def request_start():
     threading.Thread(target=start, daemon=True).start()
 
 
+
 def request_exit():
+    """F10: request an emergency stop and exit the application."""
     global exit_requested, running
     running = False
     exit_requested = True
-    print("Exit requested.")
+    print("\nEMERGENCY STOP: F10 pressed. Releasing keys and exiting...")
+    # If no worker is active, release modifiers immediately.
+    if not busy:
+        for key in ("shift", "ctrl", "alt"):
+            try:
+                pydirectinput.keyUp(key)
+            except Exception:
+                try:
+                    pyautogui.keyUp(key)
+                except Exception:
+                    pass
 
 
 def main():
-    print("PoE 2 grid currency spammer вЂ” PyDirectInput keyboard")
+    print("PoE 2 grid currency spammer")
     print(f'Target text: "{load_targets()}"')
     print(f"Grid: {COLUMNS} columns x {ROWS} rows")
     print(f"Required target properties: {REQUIRED_TARGETS}")
-    print("1) Select the currency manually.")
-    print("2) Put the cursor over the TOP-LEFT item.")
-    print("3) F6 = start, F7 = stop, F10 = exit.")
-    print("Shift stays held for the whole run.")
-    print("Keyboard injection: PyDirectInput; hotkey listener: keyboard.")
+    print("F6 = start, F7 = stop, F10 = emergency stop and exit.")
+    print("F10 is monitored directly through Windows API.")
 
+    # Keep existing F6/F7 behavior; F10 is polled separately because
+    # the keyboard hook was unreliable in the previous version.
     keyboard.add_hotkey("f6", request_start)
     keyboard.add_hotkey("f7", stop)
-    keyboard.add_hotkey("f10", request_exit)
+
+    user32 = ctypes.windll.user32
+    f10_vk = 0x79
+    f10_was_down = False
 
     try:
         while not exit_requested:
-            time.sleep(0.1)
+            f10_is_down = bool(user32.GetAsyncKeyState(f10_vk) & 0x8000)
+            if f10_is_down and not f10_was_down:
+                request_exit()
+            f10_was_down = f10_is_down
+            time.sleep(0.02)
     except KeyboardInterrupt:
         pass
     finally:
         stop()
         keyboard.unhook_all()
+        for key in ("shift", "ctrl", "alt"):
+            try:
+                pydirectinput.keyUp(key)
+            except Exception:
+                try:
+                    pyautogui.keyUp(key)
+                except Exception:
+                    pass
         print("Exited.")
 
 
