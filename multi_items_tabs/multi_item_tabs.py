@@ -32,11 +32,11 @@ import pyperclip
 TARGET_FILE = "target.txt"
 
 COLUMNS = 12
-ROWS = 5
+ROWS = 8
 
 MOVE_RIGHT_PIXELS = 65
 MOVE_DOWN_PIXELS = 65
-MOVE_DURATION = 0.25
+MOVE_DURATION = 0.15
 
 # Coordinates measured from the supplied 1650x927 screenshot.
 # Automatically scaled to the actual desktop resolution (including 150% scaling).
@@ -52,21 +52,23 @@ TAB_BUTTONS = {
     6: (419, 257),
 }
 GRID_FIRST_ITEM = (56, 299)
-TAB_SWITCH_DELAY = 0.6
+TAB_SWITCH_DELAY = 0.3
+TAB_CLICK_HOLD_DURATION = 0.15
 
 REQUIRED_TARGETS = 2
 
 MAX_ATTEMPTS = 60
-CLICK_DELAY = 0.15
+CLICK_HOLD_DURATION = 0.15
+CLICK_DELAY = 0.1
 COPY_DELAY = 0.15
 # -----------------------------
 
 # Keep PyAutoGUI for mouse movement/clicks and its corner failsafe.
 pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.03
+pyautogui.PAUSE = 0.01
 
 # PyDirectInput has its own pause; keep it short for this automation.
-pydirectinput.PAUSE = 0.03
+pydirectinput.PAUSE = 0.01
 
 running = False
 busy = False
@@ -80,14 +82,45 @@ TARGET_LOG_PATH = LOG_DIR / "target_values.txt"
 
 
 def append_targets_to_log(targets):
-    """Append only the current target values, separated from other runs."""
+    """Append target values only if this set of values is not already logged."""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     separator = "-" * 60
+
+    # Compare as sets so reordering the same target values is still a duplicate.
+    current_values = frozenset(value.strip().casefold() for value in targets if value.strip())
+    if not current_values:
+        return False
+
+    if TARGET_LOG_PATH.exists():
+        existing_text = TARGET_LOG_PATH.read_text(encoding="utf-8-sig")
+        existing_block = []
+
+        for line in existing_text.splitlines():
+            if line.strip() == separator:
+                if existing_block:
+                    saved_values = frozenset(
+                        value.strip().casefold()
+                        for value in existing_block
+                        if value.strip()
+                    )
+                    if saved_values == current_values:
+                        print("These target values are already present in the log; not appending.")
+                        return False
+                    existing_block = []
+            else:
+                existing_block.append(line)
+
     with TARGET_LOG_PATH.open("a", encoding="utf-8") as log_file:
+        # Keep the log limited to target values and dashed separators.
+        if TARGET_LOG_PATH.stat().st_size > 0:
+            log_file.write("\n")
         log_file.write(separator + "\n")
         for target in targets:
             log_file.write(target + "\n")
-        log_file.write(separator + "\n\n")
+        log_file.write(separator + "\n")
+
+    print("New target values saved to the log.")
+    return True
 
 
 def load_targets():
@@ -148,6 +181,15 @@ def move_smooth(dx, dy):
         )
 
 
+def click_item():
+    """Hold the left mouse button for CLICK_HOLD_DURATION, then release."""
+    pyautogui.mouseDown(button="left")
+    try:
+        time.sleep(CLICK_HOLD_DURATION)
+    finally:
+        pyautogui.mouseUp(button="left")
+
+
 def process_item(row_number, column_number, targets):
     """Return NEXT, ERROR or LIMIT."""
     global running
@@ -177,7 +219,7 @@ def process_item(row_number, column_number, targets):
     while running and attempts < MAX_ATTEMPTS:
         if not running:
             return "NEXT"
-        pyautogui.click()
+        click_item()
         attempts += 1
         time.sleep(CLICK_DELAY)
         if not running:
@@ -267,19 +309,30 @@ def select_tabs():
             print("Invalid selection. Use numbers 1-6, e.g. 1,3,5-6.")
 
 
+def click_stash_tab(tab_number, scale):
+    """Click a stash tab using the tested PyDirectInput method."""
+    tab_x, tab_y = scaled_point(TAB_BUTTONS[tab_number], scale)
+    print(f"\n===== Stash tab {tab_number}: click ({tab_x}, {tab_y}) =====")
+
+    # Match the successfully tested clicker v3: move with PyDirectInput,
+    # hold the left button briefly, then release it. Shift is NOT released.
+    pydirectinput.moveTo(tab_x, tab_y, duration=0.10)
+    pydirectinput.mouseDown(button="left")
+    try:
+        time.sleep(TAB_CLICK_HOLD_DURATION)
+    finally:
+        pydirectinput.mouseUp(button="left")
+    time.sleep(TAB_SWITCH_DELAY)
+
+
 def process_tab(tab_number, targets, scale):
-    """Switch to one tab, move to its first item, and process the grid."""
+    """Switch to one tab and process its grid while keeping Shift held."""
     global running
 
     if not running:
         return "STOPPED"
 
-    # Avoid Shift being held while clicking the tab selector.
-    pydirectinput.keyUp("shift")
-    tab_x, tab_y = scaled_point(TAB_BUTTONS[tab_number], scale)
-    print(f"\n===== Stash tab {tab_number}: click ({tab_x}, {tab_y}) =====")
-    pyautogui.click(tab_x, tab_y)
-    time.sleep(TAB_SWITCH_DELAY)
+    click_stash_tab(tab_number, scale)
 
     if not running:
         return "STOPPED"
@@ -287,8 +340,6 @@ def process_tab(tab_number, targets, scale):
     first_x, first_y = scaled_point(GRID_FIRST_ITEM, scale)
     pyautogui.moveTo(first_x, first_y, duration=0.15)
     time.sleep(0.15)
-    pydirectinput.keyDown("shift")
-    time.sleep(0.10)
 
     for row in range(1, ROWS + 1):
         if not running:
@@ -356,20 +407,27 @@ def start():
         )
         print(f"Loaded target properties: {len(targets)}")
         print(f"Required properties per item: {REQUIRED_TARGETS}")
+        print(
+            f"Item click hold: {CLICK_HOLD_DURATION}s; post-click delay: {CLICK_DELAY}s; "
+            f"tab click hold: {TAB_CLICK_HOLD_DURATION}s; tab switch wait: {TAB_SWITCH_DELAY}s."
+        )
+        print("Shift remains held continuously across all selected tabs.")
         print("The cursor will be positioned automatically at the first item.")
 
+        # Hold Shift exactly once for the complete run. It stays held while
+        # clicking tabs, processing items, and moving between tabs.
         running = True
-        for tab_number in tabs:
+        pydirectinput.keyDown("shift")
+        time.sleep(0.05)
+
+        # Process each requested tab exactly once, in ascending order.
+        for tab_number in sorted(set(tabs)):
             if not running:
                 break
 
             result = process_tab(tab_number, targets, scale)
             if result in ("ERROR", "LIMIT"):
                 break
-
-            if running:
-                pydirectinput.keyUp("shift")
-                time.sleep(0.25)
 
         if running:
             print("\nSelected stash tabs finished.")

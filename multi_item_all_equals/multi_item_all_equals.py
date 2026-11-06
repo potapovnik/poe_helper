@@ -31,7 +31,7 @@ import pyperclip
 # ---------- SETTINGS ----------
 TARGET_FILE = "target.txt"
 
-COLUMNS = 12
+COLUMNS = 3
 ROWS = 5
 
 MOVE_RIGHT_PIXELS = 65
@@ -40,7 +40,7 @@ MOVE_DURATION = 0.25
 
 REQUIRED_TARGETS = 2
 
-MAX_ATTEMPTS = 60
+MAX_ATTEMPTS = 65
 CLICK_DELAY = 0.15
 COPY_DELAY = 0.15
 # -----------------------------

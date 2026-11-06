@@ -21,8 +21,8 @@ import pydirectinput
 # and scaled to the desktop resolution (2560x1440).
 # GRID_START is the center of the top-left inventory cell.
 GRID_START = (1728, 818)
-CELL_WIDTH = 70
-CELL_HEIGHT = 70
+CELL_WIDTH = 65
+CELL_HEIGHT = 65
 GRID_COLUMNS = 12
 GRID_ROWS = 5
 

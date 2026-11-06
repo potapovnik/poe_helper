@@ -23,23 +23,23 @@ import pyperclip
 
 TARGET_FILE = "target.txt"
 
-COLUMNS = 4             # N: number of columns
+COLUMNS = 1             # N: number of columns
 ROWS = 1                # M: number of rows
 
 MOVE_RIGHT_PIXELS = 65  # Distance between item centers horizontally
 MOVE_DOWN_PIXELS = 65   # Distance between item centers vertically
-MOVE_DURATION = 0.25    # Smooth mouse movement duration, in seconds
+MOVE_DURATION = 0.20    # Smooth mouse movement duration, in seconds
 
-TARGET_MODE = "ALL"     # "ALL" = every target in target.txt; "ANY" = at least one
+TARGET_MODE = "ANY"     # "ALL" = every target in target.txt; "ANY" = at least one
 
 MAX_ATTEMPTS = 1500     # Safety cap for EACH item
-CLICK_DELAY = 0.15      # Delay after each currency use
-COPY_DELAY = 0.15       # Original working Ctrl+C delay
+CLICK_DELAY = 0.10      # Delay after each currency use
+COPY_DELAY = 0.10       # Original working Ctrl+C delay
 
 # -----------------------------------
 
 pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.03
+pyautogui.PAUSE = 0.01
 
 running = False
 busy = False
@@ -108,10 +108,24 @@ def load_targets():
             if line.strip()
         ]
 
+def release_ctrl_and_alt():
+    """Best-effort release of Ctrl and Alt to avoid stuck modifier states."""
+    try:
+        pydirectinput.keyUp("ctrl")
+    finally:
+        # Explicitly release Alt after every Ctrl+C, as requested.
+        pydirectinput.keyUp("alt")
 
 def read_item_text():
     # Keep the exact clipboard method from the original working script.
-    pyautogui.hotkey("ctrl", "c")
+    try:
+        pydirectinput.keyDown("ctrl")
+        pydirectinput.press("c")
+        time.sleep(0.01)
+        pydirectinput.keyUp("ctrl")
+    finally:
+        release_ctrl_and_alt()
+
     time.sleep(COPY_DELAY)
 
     text = pyperclip.paste()
@@ -280,7 +294,7 @@ def start():
                 # Move to the next item in this row.
                 if column < COLUMNS:
                     move_smooth(MOVE_RIGHT_PIXELS, 0)
-                    time.sleep(0.20)
+                    time.sleep(0.10)
 
             # After the last column, return to the first column and move down.
             if running and row < ROWS:
@@ -288,7 +302,7 @@ def start():
                     move_smooth(-MOVE_RIGHT_PIXELS * (COLUMNS - 1), 0)
 
                 move_smooth(0, MOVE_DOWN_PIXELS)
-                time.sleep(0.20)
+                time.sleep(0.10)
 
         print("\nGrid sequence finished.")
 
