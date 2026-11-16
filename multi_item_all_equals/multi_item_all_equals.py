@@ -31,8 +31,8 @@ import pyperclip
 # ---------- SETTINGS ----------
 TARGET_FILE = "target.txt"
 
-COLUMNS = 3
-ROWS = 5
+COLUMNS = 12
+ROWS = 8
 
 MOVE_RIGHT_PIXELS = 65
 MOVE_DOWN_PIXELS = 65
@@ -40,17 +40,17 @@ MOVE_DURATION = 0.25
 
 REQUIRED_TARGETS = 2
 
-MAX_ATTEMPTS = 65
+MAX_ATTEMPTS = 100
 CLICK_DELAY = 0.15
 COPY_DELAY = 0.15
 # -----------------------------
 
 # Keep PyAutoGUI for mouse movement/clicks and its corner failsafe.
 pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.03
+pyautogui.PAUSE = 0.025
 
 # PyDirectInput has its own pause; keep it short for this automation.
-pydirectinput.PAUSE = 0.03
+pydirectinput.PAUSE = 0.025
 
 running = False
 busy = False

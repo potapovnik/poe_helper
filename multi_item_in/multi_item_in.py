@@ -1,3 +1,4 @@
+
 """
 PoE 2 grid currency spammer
 
@@ -23,23 +24,24 @@ import pyperclip
 
 TARGET_FILE = "target.txt"
 
-COLUMNS = 1             # N: number of columns
-ROWS = 1                # M: number of rows
+COLUMNS = 1
+ROWS = 1
 
-MOVE_RIGHT_PIXELS = 65  # Distance between item centers horizontally
-MOVE_DOWN_PIXELS = 65   # Distance between item centers vertically
-MOVE_DURATION = 0.20    # Smooth mouse movement duration, in seconds
+MOVE_RIGHT_PIXELS = 65
+MOVE_DOWN_PIXELS = 65
+MOVE_DURATION = 0.20
 
-TARGET_MODE = "ANY"     # "ALL" = every target in target.txt; "ANY" = at least one
+TARGET_MODE = "ANY"
 
-MAX_ATTEMPTS = 1500     # Safety cap for EACH item
-CLICK_DELAY = 0.10      # Delay after each currency use
-COPY_DELAY = 0.10       # Original working Ctrl+C delay
+MAX_ATTEMPTS = 1000
+CLICK_DELAY = 0.10
+COPY_DELAY = 0.10
 
 # -----------------------------------
 
 pyautogui.FAILSAFE = True
-pyautogui.PAUSE = 0.01
+pyautogui.PAUSE = 0.025
+pydirectinput.PAUSE = 0.025
 
 running = False
 busy = False
@@ -47,9 +49,8 @@ exit_requested = False
 state_lock = threading.Lock()
 
 
-
 # ---------- TARGET LOG ----------
-# One persistent file; each unique target set is written only once.
+
 LOG_DIR = "logs"
 TARGET_LOG_FILE = "target_values.txt"
 LOG_SEPARATOR = "------------------------------------------------------------"
@@ -58,6 +59,7 @@ log_lock = threading.Lock()
 
 def save_targets_to_log(targets):
     """Append target values only, skipping sets already present (order/case-insensitive)."""
+
     log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), LOG_DIR)
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, TARGET_LOG_FILE)
@@ -70,11 +72,14 @@ def save_targets_to_log(targets):
 
     with log_lock:
         existing_keys = set()
+
         if os.path.exists(log_path):
             with open(log_path, "r", encoding="utf-8-sig") as log_file:
                 block = []
+
                 for raw_line in log_file:
                     line = raw_line.strip()
+
                     if line == LOG_SEPARATOR:
                         values = [item.casefold() for item in block if item]
                         if values:
@@ -82,6 +87,7 @@ def save_targets_to_log(targets):
                         block = []
                     elif line:
                         block.append(line)
+
                 values = [item.casefold() for item in block if item]
                 if values:
                     existing_keys.add(tuple(sorted(set(values))))
@@ -92,12 +98,18 @@ def save_targets_to_log(targets):
 
         with open(log_path, "a", encoding="utf-8") as log_file:
             if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
-                log_file.write("\\n")
-            log_file.write(LOG_SEPARATOR + "\\n")
+                log_file.write("\n")
+
+            log_file.write(LOG_SEPARATOR + "\n")
+
             for value in current:
-                log_file.write(value + "\\n")
-            log_file.write(LOG_SEPARATOR + "\\n")
+                log_file.write(value + "\n")
+
+            log_file.write(LOG_SEPARATOR + "\n")
+
         print(f"New target set saved to {log_path}.")
+
+
 # -------------------------------
 
 def load_targets():
@@ -108,13 +120,15 @@ def load_targets():
             if line.strip()
         ]
 
+
 def release_ctrl_and_alt():
     """Best-effort release of Ctrl and Alt to avoid stuck modifier states."""
+
     try:
         pydirectinput.keyUp("ctrl")
     finally:
-        # Explicitly release Alt after every Ctrl+C, as requested.
         pydirectinput.keyUp("alt")
+
 
 def read_item_text():
     # Keep the exact clipboard method from the original working script.
@@ -129,7 +143,7 @@ def read_item_text():
     time.sleep(COPY_DELAY)
 
     text = pyperclip.paste()
-    print("Р‘СѓС„РµСЂ РѕР±РјРµРЅР°:", repr(text[:100]))
+    print("Буфер обмена:", repr(text[:100]))
 
     if not text.strip():
         return None
@@ -139,6 +153,7 @@ def read_item_text():
 
 def check_targets(text, targets):
     """Return found and missing targets according to TARGET_MODE."""
+
     lowered_text = text.casefold()
     found = [target for target in targets if target in lowered_text]
     missing = [target for target in targets if target not in lowered_text]
@@ -161,6 +176,7 @@ def stop():
 
 def move_smooth(dx, dy):
     """Move the cursor along a visible path instead of jumping instantly."""
+
     if not running:
         return
 
@@ -174,6 +190,7 @@ def move_smooth(dx, dy):
 
 def process_item(row_number, column_number, targets):
     """Search one item. Return True if a target was found."""
+
     global running
 
     item_attempts = 0
@@ -240,8 +257,6 @@ def start():
             return
         busy = True
 
-    total_attempts_note = "See per-item attempt counts above."
-
     try:
         targets = load_targets()
 
@@ -259,17 +274,19 @@ def start():
             f"\nStarting grid: {COLUMNS} columns x {ROWS} rows "
             f"({COLUMNS * ROWS} items)."
         )
+
         print(
             f"Grid spacing: {MOVE_RIGHT_PIXELS}px horizontally, "
             f"{MOVE_DOWN_PIXELS}px vertically."
         )
+
         print(f"Smooth movement duration: {MOVE_DURATION}s.")
         print(f"Target mode: {TARGET_MODE}")
         print("Place the cursor over the TOP-LEFT item before pressing F6.")
 
         running = True
 
-        # Hold Shift once for the entire grid. Do not release it between items.
+        # Hold Shift once for the entire grid.
         pyautogui.keyDown("shiftleft")
         time.sleep(0.10)
         print("Shift held for the entire run.")
@@ -296,7 +313,7 @@ def start():
                     move_smooth(MOVE_RIGHT_PIXELS, 0)
                     time.sleep(0.10)
 
-            # After the last column, return to the first column and move down.
+            # Return to first column and move down.
             if running and row < ROWS:
                 if COLUMNS > 1:
                     move_smooth(-MOVE_RIGHT_PIXELS * (COLUMNS - 1), 0)
@@ -308,8 +325,10 @@ def start():
 
     except pyautogui.FailSafeException:
         print("PyAutoGUI failsafe triggered.")
+
     except Exception as exc:
         print(f"Stopped due to error: {exc}")
+
     finally:
         # Shift is released only once, after the whole run or a stop/error.
         try:
@@ -329,14 +348,16 @@ def request_start():
     threading.Thread(target=start, daemon=True).start()
 
 
-
 def request_exit():
     """F10: request an emergency stop and exit the application."""
+
     global exit_requested, running
+
     running = False
     exit_requested = True
+
     print("\nEMERGENCY STOP: F10 pressed. Releasing keys and exiting...")
-    # If no worker is active, release modifiers immediately.
+
     if not busy:
         for key in ("shift", "ctrl", "alt"):
             try:
@@ -356,8 +377,6 @@ def main():
     print("F6 = start, F7 = stop, F10 = emergency stop and exit.")
     print("F10 is monitored directly through Windows API.")
 
-    # Keep existing F6/F7 behavior; F10 is polled separately because
-    # the keyboard hook was unreliable in the previous version.
     keyboard.add_hotkey("f6", request_start)
     keyboard.add_hotkey("f7", stop)
 
@@ -368,15 +387,20 @@ def main():
     try:
         while not exit_requested:
             f10_is_down = bool(user32.GetAsyncKeyState(f10_vk) & 0x8000)
+
             if f10_is_down and not f10_was_down:
                 request_exit()
+
             f10_was_down = f10_is_down
             time.sleep(0.02)
+
     except KeyboardInterrupt:
         pass
+
     finally:
         stop()
         keyboard.unhook_all()
+
         for key in ("shift", "ctrl", "alt"):
             try:
                 pydirectinput.keyUp(key)
@@ -385,6 +409,7 @@ def main():
                     pyautogui.keyUp(key)
                 except Exception:
                     pass
+
         print("Exited.")
 
 
