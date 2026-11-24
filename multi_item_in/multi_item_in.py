@@ -5,7 +5,7 @@ PoE 2 grid currency spammer
 1. Hover the first item and select the currency manually.
 2. Put the cursor over the FIRST item (top-left of the grid).
 3. Set COLUMNS and ROWS below.
-4. Press F6 to start; F7 stops; F10 performs an emergency stop and exits.
+4. Press F6 to start or stop; F10 performs an emergency stop and exits.
 
 Shift is held continuously during the whole run and released only on exit/stop.
 """
@@ -14,6 +14,9 @@ import time
 import threading
 import os
 import ctypes
+import re
+from datetime import datetime
+from queue import Queue
 
 import keyboard
 import pyautogui
@@ -47,6 +50,8 @@ running = False
 busy = False
 exit_requested = False
 state_lock = threading.Lock()
+toggle_lock = threading.Lock()
+stop_event = threading.Event()
 
 
 # ---------- TARGET LOG ----------
@@ -55,6 +60,33 @@ LOG_DIR = "logs"
 TARGET_LOG_FILE = "target_values.txt"
 LOG_SEPARATOR = "------------------------------------------------------------"
 log_lock = threading.Lock()
+
+CLIPBOARD_LOG_FILE = "clipboard_text.txt"
+clipboard_queue = Queue()
+
+
+def clipboard_log_worker():
+    """Write clipboard snapshots asynchronously so game automation is not delayed."""
+    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), LOG_DIR)
+    os.makedirs(log_dir, exist_ok=True)
+    log_path = os.path.join(log_dir, CLIPBOARD_LOG_FILE)
+    while True:
+        item = clipboard_queue.get()
+        if item is None:
+            clipboard_queue.task_done()
+            break
+        timestamp, copied_text = item
+        try:
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(f"\n[{timestamp}]\n{copied_text.rstrip()}\n")
+        except Exception as exc:
+            print(f"Clipboard log write error: {exc}")
+        finally:
+            clipboard_queue.task_done()
+
+
+clipboard_logger_thread = threading.Thread(target=clipboard_log_worker, daemon=True)
+clipboard_logger_thread.start()
 
 
 def save_targets_to_log(targets):
@@ -131,7 +163,8 @@ def release_ctrl_and_alt():
 
 
 def read_item_text():
-    # Keep the exact clipboard method from the original working script.
+    # Clear clipboard before copying so stale content cannot be mistaken for a fresh read.
+    pyperclip.copy("")
     try:
         pydirectinput.keyDown("ctrl")
         pydirectinput.press("c")
@@ -140,23 +173,49 @@ def read_item_text():
     finally:
         release_ctrl_and_alt()
 
-    time.sleep(COPY_DELAY)
+    # Poll briefly for clipboard content, instead of always waiting the full delay.
+    deadline = time.monotonic() + max(COPY_DELAY, 0.25)
+    text = ""
+    while time.monotonic() < deadline:
+        text = pyperclip.paste()
+        if text.strip():
+            break
+        time.sleep(0.01)
 
-    text = pyperclip.paste()
     print("Буфер обмена:", repr(text[:100]))
-
     if not text.strip():
         return None
 
+    # Log in a background queue; file I/O does not block the main loop.
+    clipboard_queue.put((datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"), text))
     return text
 
 
+def mask_to_regex(mask):
+    """Custom target masks: . and * = one arbitrary character; ? = any length.
+    All other characters (including parentheses, +, %, brackets) are literal.
+    """
+    parts = []
+    for char in mask:
+        if char in (".", "*"):
+            parts.append(".")
+        elif char == "?":
+            parts.append(".*")
+        else:
+            parts.append(re.escape(char))
+    return "".join(parts)
+
+
 def check_targets(text, targets):
-    """Return found and missing targets according to TARGET_MODE."""
+    """Match custom masks; special wildcard symbols are only . * and ?."""
 
     lowered_text = text.casefold()
-    found = [target for target in targets if target in lowered_text]
-    missing = [target for target in targets if target not in lowered_text]
+    found = []
+    missing = []
+    for target in targets:
+        pattern = mask_to_regex(target.casefold())
+        matched = re.search(pattern, lowered_text) is not None
+        (found if matched else missing).append(target)
 
     if TARGET_MODE == "ALL":
         success = len(missing) == 0
@@ -171,6 +230,7 @@ def check_targets(text, targets):
 def stop():
     global running
     running = False
+    stop_event.set()
     print("\nStop requested. Releasing Shift...")
 
 
@@ -251,12 +311,7 @@ def process_item(row_number, column_number, targets):
 def start():
     global running, busy
 
-    with state_lock:
-        if busy:
-            print("Already running.")
-            return
-        busy = True
-
+    # busy is reserved synchronously by toggle_start_stop before this worker starts.
     try:
         targets = load_targets()
 
@@ -284,6 +339,9 @@ def start():
         print(f"Target mode: {TARGET_MODE}")
         print("Place the cursor over the TOP-LEFT item before pressing F6.")
 
+        if stop_event.is_set():
+            print("Start cancelled by F6 stop request.")
+            return
         running = True
 
         # Hold Shift once for the entire grid.
@@ -344,8 +402,18 @@ def start():
         print("Stopped. Press F6 to start again.")
 
 
-def request_start():
-    threading.Thread(target=start, daemon=True).start()
+def toggle_start_stop():
+    """F6 toggles: reserve the worker slot immediately, or stop an active worker."""
+    global running, busy
+    with toggle_lock:
+        if busy:
+            stop()
+            return
+        # Reserve the slot synchronously so a quick second F6 cannot race startup.
+        with state_lock:
+            busy = True
+        stop_event.clear()
+        threading.Thread(target=start, daemon=True).start()
 
 
 def request_exit():
@@ -374,11 +442,10 @@ def main():
     print(f'Target text: "{load_targets()}"')
     print(f"Grid: {COLUMNS} columns x {ROWS} rows")
     print(f"Target mode: {TARGET_MODE}")
-    print("F6 = start, F7 = stop, F10 = emergency stop and exit.")
+    print("F6 = start/stop toggle, F10 = emergency stop and exit.")
     print("F10 is monitored directly through Windows API.")
 
-    keyboard.add_hotkey("f6", request_start)
-    keyboard.add_hotkey("f7", stop)
+    keyboard.add_hotkey("f6", toggle_start_stop)
 
     user32 = ctypes.windll.user32
     f10_vk = 0x79
@@ -410,6 +477,8 @@ def main():
                 except Exception:
                     pass
 
+        clipboard_queue.put(None)
+        clipboard_logger_thread.join(timeout=2.0)
         print("Exited.")
 
 

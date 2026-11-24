@@ -31,8 +31,8 @@ import pyperclip
 # ---------- SETTINGS ----------
 TARGET_FILE = "target.txt"
 
-COLUMNS = 12
-ROWS = 8
+COLUMNS = 1
+ROWS = 1
 
 MOVE_RIGHT_PIXELS = 65
 MOVE_DOWN_PIXELS = 65
