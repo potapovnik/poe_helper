@@ -1,11 +1,15 @@
-
 """
 PoE 2 grid currency spammer
 
 1. Hover the first item and select the currency manually.
 2. Put the cursor over the FIRST item (top-left of the grid).
-3. Set COLUMNS and ROWS below.
+3. Set COLUMNS and ROWS in config.json (or leave defaults).
 4. Press F6 to start or stop; F10 performs an emergency stop and exits.
+
+All settings live in config.json next to this script.
+Defaults are kept in code; values from config.json override them.
+If config.json is missing, it is created with default values on first run.
+If a key is missing in config.json, the built-in default is used.
 
 Shift is held continuously during the whole run and released only on exit/stop.
 """
@@ -13,6 +17,7 @@ Shift is held continuously during the whole run and released only on exit/stop.
 import time
 import threading
 import os
+import json
 import ctypes
 import re
 from datetime import datetime
@@ -23,22 +28,116 @@ import pyautogui
 import pydirectinput
 import pyperclip
 
-# ---------- USER SETTINGS ----------
+# ---------- DEFAULT SETTINGS (fallbacks if config.json lacks a key) ----------
 
-TARGET_FILE = "target.txt"
+DEFAULT_CONFIG = {
+    "TARGET_FILE": "target.txt",
 
-COLUMNS = 1
-ROWS = 1
+    "COLUMNS": 1,
+    "ROWS": 1,
 
-MOVE_RIGHT_PIXELS = 65
-MOVE_DOWN_PIXELS = 65
-MOVE_DURATION = 0.20
+    "MOVE_RIGHT_PIXELS": 65,
+    "MOVE_DOWN_PIXELS": 65,
+    "MOVE_DURATION": 0.20,
 
-TARGET_MODE = "ANY"
+    # Сколько совпадений из target.txt должно быть в тексте.
+    # TARGET_REQUIRED = 1 -> "ANY"; = N -> "ALL"; = 2 при трёх целях -> "2 из 3".
+    # TARGET_EXACT = True -> строго ровно N (не больше).
+    "TARGET_REQUIRED": 2,
+    "TARGET_EXACT": False,
 
-MAX_ATTEMPTS = 1000
-CLICK_DELAY = 0.10
-COPY_DELAY = 0.10
+    "MAX_ATTEMPTS": 1000,
+    "CLICK_DELAY": 0.10,
+    "COPY_DELAY": 0.20,
+
+    "LOG_DIR": "logs",
+    "TARGET_LOG_FILE": "target_values.txt",
+    "CLIPBOARD_LOG_FILE": "clipboard_text.txt",
+}
+
+CONFIG_FILE = "config.json"
+LOG_SEPARATOR = "------------------------------------------------------------"
+
+# ---------- CONFIG LOADING ----------
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_PATH = os.path.join(SCRIPT_DIR, CONFIG_FILE)
+
+
+def _to_bool(value):
+    """Robust bool conversion for JSON values like true / "true" / 1 / "yes"."""
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value)
+
+
+def load_config():
+    """Load config.json, creating it with defaults if missing.
+
+    Priority:
+      1. value from config.json
+      2. value from DEFAULT_CONFIG
+    Unknown keys in config.json are ignored (and reported).
+    """
+
+    if not os.path.exists(CONFIG_PATH):
+        try:
+            with open(CONFIG_PATH, "w", encoding="utf-8") as f:
+                json.dump(DEFAULT_CONFIG, f, indent=2, ensure_ascii=False)
+            print(f"Created default config: {CONFIG_PATH}")
+        except Exception as exc:
+            print(f"Could not create {CONFIG_PATH}: {exc}. Using built-in defaults.")
+            return DEFAULT_CONFIG.copy()
+
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8-sig") as f:
+            raw = json.load(f)
+        if not isinstance(raw, dict):
+            print("Config root must be a JSON object; using built-in defaults.")
+            return DEFAULT_CONFIG.copy()
+    except Exception as exc:
+        print(f"Config load error ({exc}); using built-in defaults.")
+        return DEFAULT_CONFIG.copy()
+
+    merged = DEFAULT_CONFIG.copy()
+    for key, value in raw.items():
+        if key in DEFAULT_CONFIG:
+            merged[key] = value
+        else:
+            print(f"Ignoring unknown config key: {key}")
+    return merged
+
+
+CFG = load_config()
+
+# ---------- EFFECTIVE SETTINGS ----------
+
+TARGET_FILE = str(CFG["TARGET_FILE"])
+# Resolve relative TARGET_FILE against the script folder, so double-click from anywhere works.
+if not os.path.isabs(TARGET_FILE):
+    TARGET_FILE = os.path.join(SCRIPT_DIR, TARGET_FILE)
+
+COLUMNS = int(CFG["COLUMNS"])
+ROWS = int(CFG["ROWS"])
+
+MOVE_RIGHT_PIXELS = int(CFG["MOVE_RIGHT_PIXELS"])
+MOVE_DOWN_PIXELS = int(CFG["MOVE_DOWN_PIXELS"])
+MOVE_DURATION = float(CFG["MOVE_DURATION"])
+
+TARGET_REQUIRED = int(CFG["TARGET_REQUIRED"])
+TARGET_EXACT = _to_bool(CFG["TARGET_EXACT"])
+
+MAX_ATTEMPTS = int(CFG["MAX_ATTEMPTS"])
+CLICK_DELAY = float(CFG["CLICK_DELAY"])
+COPY_DELAY = float(CFG["COPY_DELAY"])
+
+LOG_DIR = str(CFG["LOG_DIR"])
+TARGET_LOG_FILE = str(CFG["TARGET_LOG_FILE"])
+CLIPBOARD_LOG_FILE = str(CFG["CLIPBOARD_LOG_FILE"])
 
 # -----------------------------------
 
@@ -56,18 +155,13 @@ stop_event = threading.Event()
 
 # ---------- TARGET LOG ----------
 
-LOG_DIR = "logs"
-TARGET_LOG_FILE = "target_values.txt"
-LOG_SEPARATOR = "------------------------------------------------------------"
 log_lock = threading.Lock()
-
-CLIPBOARD_LOG_FILE = "clipboard_text.txt"
 clipboard_queue = Queue()
 
 
 def clipboard_log_worker():
     """Write clipboard snapshots asynchronously so game automation is not delayed."""
-    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), LOG_DIR)
+    log_dir = os.path.join(SCRIPT_DIR, LOG_DIR)
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, CLIPBOARD_LOG_FILE)
     while True:
@@ -92,7 +186,7 @@ clipboard_logger_thread.start()
 def save_targets_to_log(targets):
     """Append target values only, skipping sets already present (order/case-insensitive)."""
 
-    log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), LOG_DIR)
+    log_dir = os.path.join(SCRIPT_DIR, LOG_DIR)
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, TARGET_LOG_FILE)
 
@@ -207,7 +301,11 @@ def mask_to_regex(mask):
 
 
 def check_targets(text, targets):
-    """Match custom masks; special wildcard symbols are only . * and ?."""
+    """Match custom masks; success if found_count >= TARGET_REQUIRED
+    (or exactly == TARGET_REQUIRED when TARGET_EXACT is True)."""
+
+    if TARGET_REQUIRED < 1:
+        raise ValueError("TARGET_REQUIRED must be >= 1.")
 
     lowered_text = text.casefold()
     found = []
@@ -217,12 +315,10 @@ def check_targets(text, targets):
         matched = re.search(pattern, lowered_text) is not None
         (found if matched else missing).append(target)
 
-    if TARGET_MODE == "ALL":
-        success = len(missing) == 0
-    elif TARGET_MODE == "ANY":
-        success = len(found) > 0
+    if TARGET_EXACT:
+        success = len(found) == TARGET_REQUIRED
     else:
-        raise ValueError('TARGET_MODE must be either "ALL" or "ANY".')
+        success = len(found) >= TARGET_REQUIRED
 
     return success, found, missing
 
@@ -267,11 +363,13 @@ def process_item(row_number, column_number, targets):
     success, found, missing = check_targets(text, targets)
 
     if success:
-        print(f"Target condition already satisfied. Found: {found}")
+        print(
+            f"Target condition already satisfied: "
+            f"found {len(found)}/{len(targets)} (required {TARGET_REQUIRED}). Found: {found}"
+        )
         return True
 
-    if TARGET_MODE == "ALL":
-        print(f"Missing targets: {missing}")
+    print(f"Found {len(found)}/{len(targets)} (required {TARGET_REQUIRED}). Missing: {missing}")
 
     while running and item_attempts < MAX_ATTEMPTS:
         pyautogui.click()
@@ -293,11 +391,13 @@ def process_item(row_number, column_number, targets):
         success, found, missing = check_targets(text, targets)
 
         if success:
-            print(f"TARGET CONDITION SATISFIED: {found}")
+            print(
+                f"TARGET CONDITION SATISFIED: found {len(found)}/{len(targets)} "
+                f"(required {TARGET_REQUIRED}). Found: {found}"
+            )
             return True
 
-        if TARGET_MODE == "ALL":
-            print(f"Still missing: {missing}")
+        print(f"Found {len(found)}/{len(targets)}. Still missing: {missing}")
 
     if item_attempts >= MAX_ATTEMPTS:
         print(
@@ -319,6 +419,17 @@ def start():
             print("Targets is empty. Add values to target.txt.")
             return
 
+        if TARGET_REQUIRED < 1:
+            print("TARGET_REQUIRED must be at least 1.")
+            return
+
+        if TARGET_REQUIRED > len(targets):
+            print(
+                f"TARGET_REQUIRED={TARGET_REQUIRED} exceeds {len(targets)} "
+                f"targets in {TARGET_FILE}."
+            )
+            return
+
         save_targets_to_log(targets)
 
         if COLUMNS < 1 or ROWS < 1:
@@ -336,7 +447,10 @@ def start():
         )
 
         print(f"Smooth movement duration: {MOVE_DURATION}s.")
-        print(f"Target mode: {TARGET_MODE}")
+        mode_text = "exactly" if TARGET_EXACT else "at least"
+        print(
+            f"Target requirement: {mode_text} {TARGET_REQUIRED} of {len(targets)}."
+        )
         print("Place the cursor over the TOP-LEFT item before pressing F6.")
 
         if stop_event.is_set():
@@ -439,9 +553,12 @@ def request_exit():
 
 def main():
     print("PoE 2 grid currency spammer")
+    print(f"Config: {CONFIG_PATH}")
+    print(f'Target file: "{TARGET_FILE}"')
     print(f'Target text: "{load_targets()}"')
     print(f"Grid: {COLUMNS} columns x {ROWS} rows")
-    print(f"Target mode: {TARGET_MODE}")
+    mode_text = "exactly" if TARGET_EXACT else "at least"
+    print(f"Target requirement: {mode_text} {TARGET_REQUIRED} of the loaded targets.")
     print("F6 = start/stop toggle, F10 = emergency stop and exit.")
     print("F10 is monitored directly through Windows API.")
 
