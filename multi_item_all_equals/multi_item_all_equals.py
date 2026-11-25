@@ -6,15 +6,19 @@ Keyboard injection:
 - keyboard handles F6/F7; Windows API polling handles emergency F10.
 - PyAutoGUI remains responsible for mouse clicks and smooth grid movement.
 
-target.txt: one desired property per line.
-REQUIRED_TARGETS: number of different target lines required on an item.
+Files (all next to this script):
+- target.txt          : one desired property per line.
+- stop_if_present.txt : one "stop" property per line. Exactly one match -> move on.
+- not_target.txt      : one "blocked" property per line. Any match -> keep rerolling,
+                        regardless of target/stop matches.
 
-Item logic:
-- REQUIRED_TARGETS or more matching properties -> next item.
-- Zero matching properties -> skip item immediately.
-- Between 1 and REQUIRED_TARGETS - 1 -> keep rerolling.
-- After every Ctrl+C, send Alt key-up as requested.
-- Shift stays held across the entire grid run.
+Item logic (priority order):
+  1. Any not_target.txt property present -> reroll (blocked), no matter what else.
+  2. Otherwise REQUIRED_TARGETS matches from target.txt -> next item.
+  3. Otherwise exactly one match from stop_if_present.txt -> next item.
+  4. Otherwise keep clicking until (1), (2) or (3) becomes true, or MAX_ATTEMPTS.
+
+Shift stays held across the entire grid run.
 """
 
 import time
@@ -30,17 +34,19 @@ import pyperclip
 
 # ---------- SETTINGS ----------
 TARGET_FILE = "target.txt"
+STOP_FILE = "stop_if_present.txt"
+NOT_TARGET_FILE = "not_target.txt"
 
-COLUMNS = 12
-ROWS = 8
+COLUMNS = 9
+ROWS = 1
 
-MOVE_RIGHT_PIXELS = 65
-MOVE_DOWN_PIXELS = 65
+MOVE_RIGHT_PIXELS = 70
+MOVE_DOWN_PIXELS = 70
 MOVE_DURATION = 0.25
 
 REQUIRED_TARGETS = 2
 
-MAX_ATTEMPTS = 100
+MAX_ATTEMPTS = 200
 CLICK_DELAY = 0.15
 COPY_DELAY = 0.15
 # -----------------------------
@@ -56,7 +62,6 @@ running = False
 busy = False
 exit_requested = False
 state_lock = threading.Lock()
-
 
 
 # ---------- TARGET LOG ----------
@@ -103,19 +108,36 @@ def save_targets_to_log(targets):
 
         with open(log_path, "a", encoding="utf-8") as log_file:
             if os.path.exists(log_path) and os.path.getsize(log_path) > 0:
-                log_file.write("\\n")
-            log_file.write(LOG_SEPARATOR + "\\n")
+                log_file.write("\n")
+            log_file.write(LOG_SEPARATOR + "\n")
             for value in current:
-                log_file.write(value + "\\n")
-            log_file.write(LOG_SEPARATOR + "\\n")
+                log_file.write(value + "\n")
+            log_file.write(LOG_SEPARATOR + "\n")
         print(f"New target set saved to {log_path}.")
 # -------------------------------
 
-def load_targets():
-    with open(TARGET_FILE, "r", encoding="utf-8-sig") as f:
+
+def load_lines(path):
+    with open(path, "r", encoding="utf-8-sig") as f:
         lines = [line.strip().casefold() for line in f if line.strip()]
     # Duplicate lines count as one property.
     return list(dict.fromkeys(lines))
+
+
+def load_targets():
+    return load_lines(TARGET_FILE)
+
+
+def load_stop_targets():
+    if not os.path.exists(STOP_FILE):
+        return []
+    return load_lines(STOP_FILE)
+
+
+def load_not_targets():
+    if not os.path.exists(NOT_TARGET_FILE):
+        return []
+    return load_lines(NOT_TARGET_FILE)
 
 
 def release_ctrl_and_alt():
@@ -142,7 +164,7 @@ def read_item_text():
 
     time.sleep(COPY_DELAY)
     text = pyperclip.paste()
-    print("Р‘СѓС„РµСЂ РѕР±РјРµРЅР°:", repr(text[:100]))
+    print("Буфер обмена:", repr(text[:100]))
     return text if text.strip() else None
 
 
@@ -151,6 +173,14 @@ def check_targets(text, targets):
     found = [target for target in targets if target in lowered]
     missing = [target for target in targets if target not in lowered]
     return found, missing
+
+
+def find_matches(text, patterns):
+    """Return all patterns present as substrings in text."""
+    if not patterns:
+        return []
+    lowered = text.casefold()
+    return [p for p in patterns if p in lowered]
 
 
 def stop():
@@ -169,8 +199,14 @@ def move_smooth(dx, dy):
         )
 
 
-def process_item(row_number, column_number, targets):
-    """Return NEXT, ERROR or LIMIT."""
+def process_item(row_number, column_number, targets, stop_targets, not_targets):
+    """Return NEXT, ERROR or LIMIT.
+
+    Priority:
+      1. target_count >= 1 AND stop_count == 1 -> NEXT (regardless of not_target).
+      2. stop_count == 1 AND no not_target match -> NEXT.
+      3. Otherwise keep clicking until (1) or (2), or MAX_ATTEMPTS.
+    """
     global running
     attempts = 0
 
@@ -183,17 +219,25 @@ def process_item(row_number, column_number, targets):
 
     found, missing = check_targets(text, targets)
     count = len(found)
+    stop_found = find_matches(text, stop_targets)
+    stop_count = len(stop_found)
+    not_found = find_matches(text, not_targets)
+
     print(f"Found {count}/{len(targets)} target properties: {found}")
+    if stop_targets:
+        print(f"Stop-list matches: {stop_count} {stop_found}")
+    if not_targets:
+        print(f"Not-target matches: {len(not_found)} {not_found}")
 
-    if count == 0:
-        print("No target properties. Skipping to the next item.")
+    if count >= 1 and stop_targets and stop_count == 1:
+        print("Target + stop condition met; moving on.")
         return "NEXT"
 
-    if count >= REQUIRED_TARGETS:
-        print("Required number already reached.")
+    if stop_targets and stop_count == 1 and not (not_targets and not_found):
+        print("Stop-only condition met; moving on.")
         return "NEXT"
 
-    print(f"Need {REQUIRED_TARGETS - count} more. Missing: {missing}")
+    print(f"Need either 1 target + 1 stop, or 1 stop with no not-target. Missing: {missing}")
 
     while running and attempts < MAX_ATTEMPTS:
         pyautogui.click()
@@ -207,21 +251,26 @@ def process_item(row_number, column_number, targets):
 
         found, missing = check_targets(text, targets)
         count = len(found)
+        stop_found = find_matches(text, stop_targets)
+        stop_count = len(stop_found)
+        not_found = find_matches(text, not_targets)
 
+        extra = f" | stop {stop_count}: {stop_found}" if stop_targets else ""
+        extra += f" | not-target {len(not_found)}: {not_found}" if not_targets else ""
         print(
             f"Attempt {attempts}/{MAX_ATTEMPTS}: "
-            f"found {count}/{len(targets)}: {found}"
+            f"found {count}/{len(targets)}: {found}{extra}"
         )
 
-        if count == 0:
-            print("No target properties remain. Skipping to the next item.")
+        if count >= 1 and stop_targets and stop_count == 1:
+            print("Target + stop condition met; moving on.")
             return "NEXT"
 
-        if count >= REQUIRED_TARGETS:
-            print("Required number reached.")
+        if stop_targets and stop_count == 1 and not (not_targets and not_found):
+            print("Stop-only condition met; moving on.")
             return "NEXT"
 
-        print(f"Still need {REQUIRED_TARGETS - count}. Missing: {missing}")
+        print(f"Still rerolling. Missing: {missing}")
 
     if attempts >= MAX_ATTEMPTS:
         print("Safety limit reached. Stopping grid.")
@@ -246,6 +295,18 @@ def start():
         if not targets:
             print("target.txt is empty. Add one property per line.")
             return
+
+        stop_targets = load_stop_targets()
+        if stop_targets:
+            print(f"Loaded {len(stop_targets)} stop-list properties from {STOP_FILE}.")
+        else:
+            print(f"No stop-list file ({STOP_FILE}); stop-list logic disabled.")
+
+        not_targets = load_not_targets()
+        if not_targets:
+            print(f"Loaded {len(not_targets)} not-target properties from {NOT_TARGET_FILE}.")
+        else:
+            print(f"No not-target file ({NOT_TARGET_FILE}); not-target logic disabled.")
 
         save_targets_to_log(targets)
 
@@ -282,7 +343,7 @@ def start():
                 if not running:
                     break
 
-                result = process_item(row, column, targets)
+                result = process_item(row, column, targets, stop_targets, not_targets)
 
                 if not running:
                     break
@@ -333,7 +394,6 @@ def request_start():
     threading.Thread(target=start, daemon=True).start()
 
 
-
 def request_exit():
     """F10: request an emergency stop and exit the application."""
     global exit_requested, running
@@ -355,6 +415,13 @@ def request_exit():
 def main():
     print("PoE 2 grid currency spammer")
     print(f'Target text: "{load_targets()}"')
+
+    stop_targets = load_stop_targets()
+    print(f'Stop-list ({STOP_FILE}): "{stop_targets}"' if stop_targets else "Stop-list: disabled")
+
+    not_targets = load_not_targets()
+    print(f'Not-target ({NOT_TARGET_FILE}): "{not_targets}"' if not_targets else "Not-target: disabled")
+
     print(f"Grid: {COLUMNS} columns x {ROWS} rows")
     print(f"Required target properties: {REQUIRED_TARGETS}")
     print("F6 = start, F7 = stop, F10 = emergency stop and exit.")
