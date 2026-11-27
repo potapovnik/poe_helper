@@ -311,8 +311,11 @@ def check_targets(text, targets):
     found = []
     missing = []
     for target in targets:
-        pattern = mask_to_regex(target.casefold())
-        matched = re.search(pattern, lowered_text) is not None
+        lowered_target = target.casefold()
+        if any(char in lowered_target for char in (".", "*", "?")):
+            matched = re.search(mask_to_regex(lowered_target), lowered_text) is not None
+        else:
+            matched = lowered_target in lowered_text
         (found if matched else missing).append(target)
 
     if TARGET_EXACT:

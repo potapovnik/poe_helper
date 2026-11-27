@@ -5,7 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/.venv" />
       <excludeFolder url="file://$MODULE_DIR$/models" />
     </content>
-    <orderEntry type="jdk" jdkName="~\PycharmProjects\poe_helper\.venv" jdkType="Python SDK" />
+    <orderEntry type="jdk" jdkName="~\PycharmProjects\PythonProject\.venv" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>
