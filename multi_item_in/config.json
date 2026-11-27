@@ -1,0 +1,18 @@
+{
+  "TARGET_FILE": "target.txt",
+  "COLUMNS": 2,
+  "ROWS": 1,
+  "MOVE_RIGHT_PIXELS": 65,
+  "MOVE_DOWN_PIXELS": 66,
+  "MOVE_DURATION": 0.1,
+  "TARGET_REQUIRED": 1,
+  "TARGET_EXACT": false,
+  "MAX_ATTEMPTS": 50,
+  "CLICK_DELAY": 0.1,
+  "COPY_DELAY": 0.2,
+  "LOG_DIR": "logs",
+  "TARGET_LOG_FILE": "target_values.txt",
+  "CLIPBOARD_LOG_FILE": "clipboard_text.txt",
+  "window_width": 1120,
+  "window_height": 760
+}
