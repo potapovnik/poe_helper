@@ -245,33 +245,62 @@ def load_targets():
 
 def parse_targets(contents):
     groups = []
-    current_group = []
+    required = []
+    forbidden = []
+    in_forbidden_section = False
+    has_group_syntax = False
     separated = False
+
+    def finish_group():
+        nonlocal required, forbidden, in_forbidden_section, separated
+        if required or forbidden:
+            groups.append({"required": required, "forbidden": forbidden})
+            required = []
+            forbidden = []
+            in_forbidden_section = False
+            separated = True
 
     for raw_line in contents.splitlines():
         value = raw_line.strip().casefold()
-        if value:
-            current_group.append(value)
-        elif current_group:
-            groups.append(current_group)
-            current_group = []
-            separated = True
+        if not value:
+            finish_group()
+        elif value == "###":
+            has_group_syntax = True
+            in_forbidden_section = True
+        elif in_forbidden_section:
+            match = re.fullmatch(r"sum\(\s*(\d+)\s*\)\s*:\s*(.+)", value)
+            if match and int(match.group(1)) >= 1:
+                forbidden.append((match.group(2).strip(), int(match.group(1))))
+            else:
+                forbidden.append((value, 1))
+        else:
+            required.append(value)
 
-    if current_group:
-        groups.append(current_group)
+    finish_group()
 
-    if separated and len(groups) > 1:
+    if has_group_syntax or (separated and len(groups) > 1):
         return groups
-    return groups[0] if groups else []
+    return groups[0]["required"] if groups else []
 
 
 def is_grouped_targets(targets):
-    return bool(targets and isinstance(targets[0], list))
+    return bool(targets and isinstance(targets[0], dict))
 
 
 def flatten_targets(targets):
     if is_grouped_targets(targets):
-        return [target for group in targets for target in group]
+        lines = []
+        for index, group in enumerate(targets):
+            if index:
+                lines.append("")
+            lines.extend(group["required"])
+            if group["forbidden"]:
+                lines.append("###")
+                lines.extend(
+                    f"sum({minimum_count}): {target}" if minimum_count > 1 else target
+                    for target, minimum_count in group["forbidden"]
+                )
+        return lines
     return [target.strip() for target in targets if target.strip()]
 
 
@@ -328,12 +357,12 @@ def mask_to_regex(mask):
     return "".join(parts)
 
 
-def target_matches(text, target):
+def target_match_count(text, target):
     comparisons = list(re.finditer(r"([<>])\s*([+-]?\d+(?:[.,]\d+)?)", target))
     if not comparisons:
         if any(char in target for char in (".", "*", "?")):
-            return re.search(mask_to_regex(target), text) is not None
-        return target in text
+            return sum(1 for _ in re.finditer(mask_to_regex(target), text))
+        return text.count(target)
 
     pattern_parts = []
     thresholds = []
@@ -346,14 +375,19 @@ def target_matches(text, target):
         cursor = comparison.end()
     pattern_parts.append(mask_to_regex(target[cursor:]))
 
+    match_count = 0
     for match in re.finditer("".join(pattern_parts), text):
         values = [float(value.replace(",", ".")) for value in match.groups()]
         if all(
             value > threshold if operator == ">" else value < threshold
             for value, (operator, threshold) in zip(values, thresholds)
         ):
-            return True
-    return False
+            match_count += 1
+    return match_count
+
+
+def target_matches(text, target):
+    return target_match_count(text, target) > 0
 
 
 def check_targets(text, targets):
@@ -373,11 +407,20 @@ def check_targets(text, targets):
     if is_grouped_targets(targets):
         best_found, best_missing = [], None
         for group in targets:
-            found, missing = matching_targets(group)
-            if not missing:
-                return True, found, missing
-            if best_missing is None or len(found) > len(best_found):
-                best_found, best_missing = found, missing
+            found, missing = matching_targets(group["required"])
+            violations = [
+                f"Forbidden: {target} (appears {target_match_count(lowered_text, target)}; "
+                f"limit {minimum_count})"
+                for target, minimum_count in group["forbidden"]
+                if target_match_count(lowered_text, target) >= minimum_count
+            ]
+            blockers = missing + violations
+            if group["required"] and not blockers:
+                return True, found, blockers
+            if best_missing is None or (len(found), -len(blockers)) > (
+                len(best_found), -len(best_missing)
+            ):
+                best_found, best_missing = found, blockers
         return False, best_found, best_missing
 
     if TARGET_REQUIRED < 1:
