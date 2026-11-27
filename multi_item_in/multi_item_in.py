@@ -33,7 +33,7 @@ import pyperclip
 DEFAULT_CONFIG = {
     "TARGET_FILE": "target.txt",
 
-    "COLUMNS": 1,
+    "COLUMNS": 2,
     "ROWS": 1,
 
     "MOVE_RIGHT_PIXELS": 65,
@@ -190,7 +190,7 @@ def save_targets_to_log(targets):
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, TARGET_LOG_FILE)
 
-    current = [value.strip() for value in targets if value.strip()]
+    current = flatten_targets(targets)
     if not current:
         return
 
@@ -240,11 +240,39 @@ def save_targets_to_log(targets):
 
 def load_targets():
     with open(TARGET_FILE, "r", encoding="utf-8-sig") as f:
-        return [
-            line.strip().casefold()
-            for line in f
-            if line.strip()
-        ]
+        return parse_targets(f.read())
+
+
+def parse_targets(contents):
+    groups = []
+    current_group = []
+    separated = False
+
+    for raw_line in contents.splitlines():
+        value = raw_line.strip().casefold()
+        if value:
+            current_group.append(value)
+        elif current_group:
+            groups.append(current_group)
+            current_group = []
+            separated = True
+
+    if current_group:
+        groups.append(current_group)
+
+    if separated and len(groups) > 1:
+        return groups
+    return groups[0] if groups else []
+
+
+def is_grouped_targets(targets):
+    return bool(targets and isinstance(targets[0], list))
+
+
+def flatten_targets(targets):
+    if is_grouped_targets(targets):
+        return [target for group in targets for target in group]
+    return [target.strip() for target in targets if target.strip()]
 
 
 def release_ctrl_and_alt():
@@ -300,23 +328,62 @@ def mask_to_regex(mask):
     return "".join(parts)
 
 
+def target_matches(text, target):
+    comparisons = list(re.finditer(r"([<>])\s*([+-]?\d+(?:[.,]\d+)?)", target))
+    if not comparisons:
+        if any(char in target for char in (".", "*", "?")):
+            return re.search(mask_to_regex(target), text) is not None
+        return target in text
+
+    pattern_parts = []
+    thresholds = []
+    cursor = 0
+    number_pattern = r"(?:[<>]\s*)?([+-]?\d+(?:[.,]\d+)?)(?![\d.,])"
+    for comparison in comparisons:
+        pattern_parts.append(mask_to_regex(target[cursor:comparison.start()]))
+        pattern_parts.append(number_pattern)
+        thresholds.append((comparison.group(1), float(comparison.group(2).replace(",", "."))))
+        cursor = comparison.end()
+    pattern_parts.append(mask_to_regex(target[cursor:]))
+
+    for match in re.finditer("".join(pattern_parts), text):
+        values = [float(value.replace(",", ".")) for value in match.groups()]
+        if all(
+            value > threshold if operator == ">" else value < threshold
+            for value, (operator, threshold) in zip(values, thresholds)
+        ):
+            return True
+    return False
+
+
 def check_targets(text, targets):
     """Match custom masks; success if found_count >= TARGET_REQUIRED
     (or exactly == TARGET_REQUIRED when TARGET_EXACT is True)."""
 
+    lowered_text = text.casefold()
+
+    def matching_targets(group):
+        found, missing = [], []
+        for target in group:
+            lowered_target = target.casefold()
+            matched = target_matches(lowered_text, lowered_target)
+            (found if matched else missing).append(target)
+        return found, missing
+
+    if is_grouped_targets(targets):
+        best_found, best_missing = [], None
+        for group in targets:
+            found, missing = matching_targets(group)
+            if not missing:
+                return True, found, missing
+            if best_missing is None or len(found) > len(best_found):
+                best_found, best_missing = found, missing
+        return False, best_found, best_missing
+
     if TARGET_REQUIRED < 1:
         raise ValueError("TARGET_REQUIRED must be >= 1.")
 
-    lowered_text = text.casefold()
-    found = []
-    missing = []
-    for target in targets:
-        lowered_target = target.casefold()
-        if any(char in lowered_target for char in (".", "*", "?")):
-            matched = re.search(mask_to_regex(lowered_target), lowered_text) is not None
-        else:
-            matched = lowered_target in lowered_text
-        (found if matched else missing).append(target)
+    found, missing = matching_targets(targets)
 
     if TARGET_EXACT:
         success = len(found) == TARGET_REQUIRED
@@ -366,13 +433,25 @@ def process_item(row_number, column_number, targets):
     success, found, missing = check_targets(text, targets)
 
     if success:
+        denominator = len(found) + len(missing)
+        requirement = (
+            f"all {denominator} values in a group"
+            if is_grouped_targets(targets)
+            else f"required {TARGET_REQUIRED}"
+        )
         print(
             f"Target condition already satisfied: "
-            f"found {len(found)}/{len(targets)} (required {TARGET_REQUIRED}). Found: {found}"
+            f"found {len(found)}/{denominator} ({requirement}). Found: {found}"
         )
         return True
 
-    print(f"Found {len(found)}/{len(targets)} (required {TARGET_REQUIRED}). Missing: {missing}")
+    denominator = len(found) + len(missing)
+    requirement = (
+        f"all {denominator} values in one group"
+        if is_grouped_targets(targets)
+        else f"required {TARGET_REQUIRED}"
+    )
+    print(f"Found {len(found)}/{denominator} ({requirement}). Missing: {missing}")
 
     while running and item_attempts < MAX_ATTEMPTS:
         pyautogui.click()
@@ -394,13 +473,20 @@ def process_item(row_number, column_number, targets):
         success, found, missing = check_targets(text, targets)
 
         if success:
+            denominator = len(found) + len(missing)
+            requirement = (
+                f"all {denominator} values in a group"
+                if is_grouped_targets(targets)
+                else f"required {TARGET_REQUIRED}"
+            )
             print(
-                f"TARGET CONDITION SATISFIED: found {len(found)}/{len(targets)} "
-                f"(required {TARGET_REQUIRED}). Found: {found}"
+                f"TARGET CONDITION SATISFIED: found {len(found)}/{denominator} "
+                f"({requirement}). Found: {found}"
             )
             return True
 
-        print(f"Found {len(found)}/{len(targets)}. Still missing: {missing}")
+        denominator = len(found) + len(missing)
+        print(f"Found {len(found)}/{denominator}. Still missing: {missing}")
 
     if item_attempts >= MAX_ATTEMPTS:
         print(
@@ -422,11 +508,11 @@ def start():
             print("Targets is empty. Add values to target.txt.")
             return
 
-        if TARGET_REQUIRED < 1:
+        if not is_grouped_targets(targets) and TARGET_REQUIRED < 1:
             print("TARGET_REQUIRED must be at least 1.")
             return
 
-        if TARGET_REQUIRED > len(targets):
+        if not is_grouped_targets(targets) and TARGET_REQUIRED > len(targets):
             print(
                 f"TARGET_REQUIRED={TARGET_REQUIRED} exceeds {len(targets)} "
                 f"targets in {TARGET_FILE}."
@@ -450,10 +536,13 @@ def start():
         )
 
         print(f"Smooth movement duration: {MOVE_DURATION}s.")
-        mode_text = "exactly" if TARGET_EXACT else "at least"
-        print(
-            f"Target requirement: {mode_text} {TARGET_REQUIRED} of {len(targets)}."
-        )
+        if is_grouped_targets(targets):
+            print(f"Target requirement: all values from any of {len(targets)} groups.")
+        else:
+            mode_text = "exactly" if TARGET_EXACT else "at least"
+            print(
+                f"Target requirement: {mode_text} {TARGET_REQUIRED} of {len(targets)}."
+            )
         print("Place the cursor over the TOP-LEFT item before pressing F6.")
 
         if stop_event.is_set():
@@ -560,8 +649,11 @@ def main():
     print(f'Target file: "{TARGET_FILE}"')
     print(f'Target text: "{load_targets()}"')
     print(f"Grid: {COLUMNS} columns x {ROWS} rows")
-    mode_text = "exactly" if TARGET_EXACT else "at least"
-    print(f"Target requirement: {mode_text} {TARGET_REQUIRED} of the loaded targets.")
+    if is_grouped_targets(load_targets()):
+        print("Target requirement: all values from any target group.")
+    else:
+        mode_text = "exactly" if TARGET_EXACT else "at least"
+        print(f"Target requirement: {mode_text} {TARGET_REQUIRED} of the loaded targets.")
     print("F6 = start/stop toggle, F10 = emergency stop and exit.")
     print("F10 is monitored directly through Windows API.")
 
